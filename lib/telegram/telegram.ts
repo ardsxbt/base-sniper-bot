@@ -13,7 +13,7 @@ class TelegramService {
   private handlersInitialized = false;
 
   constructor() {
-    this.bot = new TelegramBot(config.TELEGRAM_BOT_TOKEN, { polling: true });
+    this.bot = new TelegramBot(config.TELEGRAM_BOT_TOKEN, { polling: !config.SERVICE_MODE });
   }
 
   async sendStartupMessage(): Promise<void> {
