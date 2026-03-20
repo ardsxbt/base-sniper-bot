@@ -1,5 +1,6 @@
 import { walletMonitoringService } from './services/monitoring/walletMonitoring.service';
 import { telegramService } from './telegram/telegram';
+import { agentPositionService } from './services/agent/position.service';
 
 export class App {
   async start(): Promise<void> {
@@ -14,5 +15,14 @@ export class App {
     } else {
       console.log('💳 No wallet addresses configured for monitoring');
     }
+
+    // Position risk manager loop (TP/SL/time-based close checks)
+    setInterval(async () => {
+      try {
+        await agentPositionService.evaluateRiskAndClose();
+      } catch (error) {
+        console.error('Agent position manager loop error:', error);
+      }
+    }, 60_000);
   }
 }

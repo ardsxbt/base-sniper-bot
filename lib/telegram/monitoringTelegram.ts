@@ -11,6 +11,7 @@ import { ethers } from 'ethers';
 import { relayService } from '../services/relay.service';
 import { decisionEngineService } from '../services/agent/decisionEngine.service';
 import { agentPolicyService } from '../services/agent/policy.service';
+import { agentPositionService } from '../services/agent/position.service';
 
 // Send new pair alert
 export async function sendPairAlert(pairInfo: IPairInfo, exchange: string): Promise<void> {
@@ -118,6 +119,7 @@ export function commandHandlers(): void {
   telegramBot.onText(/^\/agentstatus$/, async msg => {
     const chatId = msg.chat.id;
     const policy = agentPolicyService.getPolicy();
+    const openCount = agentPositionService.getOpenPositions().length;
     const text =
       `🤖 *Agent Status*\n` +
       `enabled: *${policy.enabled}*\n` +
@@ -125,8 +127,41 @@ export function commandHandlers(): void {
       `minScore: *${policy.minScore}*\n` +
       `buyEth: *${policy.defaultBuyEth}*\n` +
       `liquidityRange: *${policy.minLiquidityEth} - ${policy.maxLiquidityEth} ETH*\n` +
-      `cooldown: *${policy.cooldownMinutes} min*`;
+      `cooldown: *${policy.cooldownMinutes} min*\n` +
+      `tp/sl: *${policy.takeProfitPercent}% / ${policy.stopLossPercent}%*\n` +
+      `maxHolding: *${policy.maxHoldingMinutes} min*\n` +
+      `openPositions: *${openCount}/${policy.maxConcurrentPositions}*`;
     await telegramBot.sendMessage(chatId, text, { parse_mode: 'Markdown' });
+  });
+
+  telegramBot.onText(/^\/positions$/, async msg => {
+    const chatId = msg.chat.id;
+    const open = agentPositionService.getOpenPositions();
+    if (!open.length) {
+      await telegramBot.sendMessage(chatId, '📭 No open positions');
+      return;
+    }
+    const lines = open.map(
+      (p, i) => `${i + 1}. *${p.symbol}*\n   token: \`${p.tokenAddress}\`\n   opened: ${p.openedAt}`
+    );
+    await telegramBot.sendMessage(chatId, `📌 *Open Positions*\n\n${lines.join('\n\n')}`, {
+      parse_mode: 'Markdown',
+    });
+  });
+
+  telegramBot.onText(/^\/close (.+)$/i, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const tokenAddress = (match?.[1] || '').trim();
+    if (!ethers.isAddress(tokenAddress)) {
+      await telegramBot.sendMessage(chatId, '⚠️ Invalid token address. Usage: /close <token_address>');
+      return;
+    }
+    try {
+      const tx = await agentPositionService.closePosition(tokenAddress, 'Manual close via Telegram');
+      await telegramBot.sendMessage(chatId, `✅ Position closed\nTx: ${tx}`);
+    } catch (error) {
+      await telegramBot.sendMessage(chatId, `❌ Close failed: ${error}`);
+    }
   });
 
   telegramBot.onText(/^\/factorylist$/, async msg => {

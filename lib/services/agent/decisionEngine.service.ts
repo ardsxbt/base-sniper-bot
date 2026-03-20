@@ -5,6 +5,7 @@ import { relayService } from '../relay.service';
 import { telegramBot } from '../../telegram/telegram';
 import { agentPolicyService } from './policy.service';
 import { agentReceiptService } from './receipt.service';
+import { agentPositionService } from './position.service';
 
 class DecisionEngineService {
   private lastActionMap = new Map<string, number>();
@@ -42,6 +43,11 @@ class DecisionEngineService {
     const cooldownMs = policy.cooldownMinutes * 60 * 1000;
     if (Date.now() - lastTs < cooldownMs) {
       reasons.push('cooldown active');
+      return { action: 'SKIP', score, reasons };
+    }
+
+    if (!agentPositionService.canOpenNewPosition()) {
+      reasons.push('max concurrent positions reached');
       return { action: 'SKIP', score, reasons };
     }
 
@@ -103,6 +109,17 @@ class DecisionEngineService {
       receipt.txHash = buyResult.txHash;
       this.lastActionMap.set(token.address.toLowerCase(), Date.now());
       agentReceiptService.append(receipt);
+
+      const entryPriceUsd = await agentPositionService.getCurrentPriceUsd(token.address);
+      agentPositionService.openPosition({
+        tokenAddress: token.address,
+        symbol: token.symbol,
+        entryTxHash: buyResult.txHash,
+        entryPriceUsd,
+        entryAmountEth: decision.amountEth,
+        openedAt: new Date().toISOString(),
+        status: 'open',
+      });
 
       await telegramBot.sendMessage(
         config.TELEGRAM_CHAT_ID,

@@ -11,6 +11,9 @@ const DEFAULT_POLICY: IAgentConfig = {
   maxBuyEth: 0.02,
   minLiquidityEth: 0.3,
   maxLiquidityEth: 25,
+  takeProfitPercent: 30,
+  stopLossPercent: 15,
+  maxHoldingMinutes: 180,
 };
 
 class AgentPolicyService {

@@ -12,6 +12,9 @@ export interface IAgentConfig {
   maxBuyEth: number;
   minLiquidityEth: number;
   maxLiquidityEth: number;
+  takeProfitPercent: number;
+  stopLossPercent: number;
+  maxHoldingMinutes: number;
 }
 
 export interface IAgentDecision {
@@ -38,4 +41,16 @@ export interface IAgentReceipt {
 export interface IAgentContext {
   pairInfo: IPairInfo;
   exchange: string;
+}
+
+export interface IAgentPosition {
+  tokenAddress: string;
+  symbol: string;
+  entryTxHash: string;
+  entryPriceUsd?: number;
+  entryAmountEth: number;
+  openedAt: string;
+  status: 'open' | 'closed';
+  closeTxHash?: string;
+  closeReason?: string;
 }

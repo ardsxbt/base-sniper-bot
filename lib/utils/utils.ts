@@ -100,6 +100,14 @@ export const commandList: ICommand[] = [
     command: '/agentstatus',
     description: 'Show autonomous agent policy and status',
   },
+  {
+    command: '/positions',
+    description: 'Show current open positions',
+  },
+  {
+    command: '/close <token_address>',
+    description: 'Close open position by token address',
+  },
 ];
 
 export function getTimeAgo(timestamp: number): string {
