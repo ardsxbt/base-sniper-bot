@@ -73,7 +73,10 @@ class AgentPositionService {
         const heldMinutes = (now - opened) / 60000;
 
         if (heldMinutes >= policy.maxHoldingMinutes) {
-          const tx = await this.closePosition(pos.tokenAddress, `Max holding ${policy.maxHoldingMinutes}m`);
+          const tx = await this.closePosition(
+            pos.tokenAddress,
+            `Max holding ${policy.maxHoldingMinutes}m`
+          );
           await telegramBot.sendMessage(
             config.TELEGRAM_CHAT_ID,
             `⏱️ Closed ${pos.symbol} by max holding rule\nTx: ${tx}`
@@ -87,7 +90,10 @@ class AgentPositionService {
 
         const pnlPercent = ((currentPrice - pos.entryPriceUsd) / pos.entryPriceUsd) * 100;
         if (pnlPercent >= policy.takeProfitPercent) {
-          const tx = await this.closePosition(pos.tokenAddress, `Take profit ${policy.takeProfitPercent}%`);
+          const tx = await this.closePosition(
+            pos.tokenAddress,
+            `Take profit ${policy.takeProfitPercent}%`
+          );
           await telegramBot.sendMessage(
             config.TELEGRAM_CHAT_ID,
             `💰 TP hit for ${pos.symbol} (+${pnlPercent.toFixed(2)}%)\nTx: ${tx}`
@@ -96,7 +102,10 @@ class AgentPositionService {
         }
 
         if (pnlPercent <= -policy.stopLossPercent) {
-          const tx = await this.closePosition(pos.tokenAddress, `Stop loss ${policy.stopLossPercent}%`);
+          const tx = await this.closePosition(
+            pos.tokenAddress,
+            `Stop loss ${policy.stopLossPercent}%`
+          );
           await telegramBot.sendMessage(
             config.TELEGRAM_CHAT_ID,
             `🛑 SL hit for ${pos.symbol} (${pnlPercent.toFixed(2)}%)\nTx: ${tx}`

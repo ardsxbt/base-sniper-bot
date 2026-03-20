@@ -107,7 +107,7 @@ export function commandHandlers(): void {
 
   telegramBot.onText(/^\/executionmode (paper|live)$/i, async (msg, match) => {
     const chatId = msg.chat.id;
-    const executionMode = ((match?.[1] || 'paper').toLowerCase() as 'paper' | 'live');
+    const executionMode = (match?.[1] || 'paper').toLowerCase() as 'paper' | 'live';
     const updated = agentPolicyService.setPolicy({ executionMode });
     await telegramBot.sendMessage(
       chatId,
@@ -153,11 +153,17 @@ export function commandHandlers(): void {
     const chatId = msg.chat.id;
     const tokenAddress = (match?.[1] || '').trim();
     if (!ethers.isAddress(tokenAddress)) {
-      await telegramBot.sendMessage(chatId, '⚠️ Invalid token address. Usage: /close <token_address>');
+      await telegramBot.sendMessage(
+        chatId,
+        '⚠️ Invalid token address. Usage: /close <token_address>'
+      );
       return;
     }
     try {
-      const tx = await agentPositionService.closePosition(tokenAddress, 'Manual close via Telegram');
+      const tx = await agentPositionService.closePosition(
+        tokenAddress,
+        'Manual close via Telegram'
+      );
       await telegramBot.sendMessage(chatId, `✅ Position closed\nTx: ${tx}`);
     } catch (error) {
       await telegramBot.sendMessage(chatId, `❌ Close failed: ${error}`);
