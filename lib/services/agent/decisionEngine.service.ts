@@ -3,6 +3,7 @@ import { config } from '../../utils/config';
 import { IAgentContext, IAgentDecision, IAgentReceipt } from '../../interface/agent.interface';
 import { getNonWETHToken } from '../../contracts/pairAnalyzer';
 import { relayService } from '../relay.service';
+import { uniswapTradingService } from '../uniswapTrading.service';
 import { agentPolicyService } from './policy.service';
 import { agentReceiptService } from './receipt.service';
 import { agentPositionService } from './position.service';
@@ -162,11 +163,9 @@ class DecisionEngineService {
         return;
       }
 
-      const buyResult = await relayService.buyTokenWithRelayRouter(
-        token.address,
-        decision.amountEth,
-        5
-      );
+      const buyResult = config.USE_UNISWAP_TRADING_API
+        ? await uniswapTradingService.buyTokenWithUniswap(token.address, decision.amountEth)
+        : await relayService.buyTokenWithRelayRouter(token.address, decision.amountEth, 5);
 
       receipt.status = 'submitted';
       receipt.txHash = buyResult.txHash;

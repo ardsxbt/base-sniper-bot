@@ -11,7 +11,9 @@ Minimal Base-chain monitoring + execution bot, now with **service mode** for aut
 - Optional token contract verification check (Etherscan)
 
 ### Trading execution
-- Relay-based buy/sell on Base
+- Relay-based buy/sell on Base (default)
+- Optional Uniswap Trading API path (`USE_UNISWAP_TRADING_API=true`)
+- Permit2 signing-aware swap request flow for Uniswap route types
 - Slippage control
 - Sell `max` support
 
@@ -94,6 +96,12 @@ npm run build
 ---
 
 ## Key config
+
+Uniswap deep-stack toggle:
+- `USE_UNISWAP_TRADING_API=false` (default Relay path)
+- Set `true` + provide `UNISWAP_API_KEY` to use Uniswap Trading API execution path
+- `UNISWAP_ROUTER_VERSION` defaults to `2.0`
+
 
 From `.env`:
 
