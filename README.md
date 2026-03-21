@@ -1,6 +1,6 @@
-# Base Sniper Bot / Agent Runtime 🎯
+# Base Hunter Runtime 🤖
 
-Minimal Base-chain monitoring + execution bot, now with **service mode** for autonomous agent operation (no Telegram required).
+AI-agent-friendly Base-chain monitoring + execution runtime, designed for autonomous operation in service mode (no Telegram required).
 
 ## What it can do
 
@@ -35,8 +35,10 @@ In service mode, Telegram is disabled automatically.
 
 ## Run modes
 
-## 1) Service mode (recommended for agent runtime)
+## 1) Service mode (recommended for AI agent runtime)
 No Telegram bot needed.
+
+This mode is optimized for agent orchestrators (OpenClaw/CLI/systemd) where another agent or service supervises logs, receipts, and policy state.
 
 ```bash
 SERVICE_MODE=true npm run dev
@@ -71,8 +73,8 @@ npm run dev
 
 1. Clone + install
 ```bash
-git clone <repo-url>
-cd base-sniper-bot
+git clone https://github.com/ardsxbt/base-hunter-runtime.git
+cd base-hunter-runtime
 npm install
 ```
 
