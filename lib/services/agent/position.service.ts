@@ -1,6 +1,4 @@
 import axios from 'axios';
-import { relayService } from '../relay.service';
-import { config } from '../../utils/config';
 import { uniswapTradingService } from '../uniswapTrading.service';
 import { stateService } from '../state.service';
 import { IAgentPosition } from '../../interface/agent.interface';
@@ -34,9 +32,7 @@ class AgentPositionService {
     );
     if (idx < 0) throw new Error('Open position not found');
 
-    const result = config.USE_UNISWAP_TRADING_API
-      ? await uniswapTradingService.sellTokenWithUniswap(tokenAddress, 'max')
-      : await relayService.sellTokenWithRelayRouter(tokenAddress, 'max', 5);
+    const result = await uniswapTradingService.sellTokenWithUniswap(tokenAddress, 'max');
     positions[idx].status = 'closed';
     positions[idx].closeTxHash = result.txHash;
     positions[idx].closeReason = reason;

@@ -8,7 +8,7 @@ import { factoryList } from '../utils/utils';
 import { stateService } from '../services/state.service';
 import { checkUserTokenInfo } from '../services/info.service';
 import { ethers } from 'ethers';
-import { relayService } from '../services/relay.service';
+import { uniswapTradingService } from '../services/uniswapTrading.service';
 import { decisionEngineService } from '../services/agent/decisionEngine.service';
 import { agentPolicyService } from '../services/agent/policy.service';
 import { agentPositionService } from '../services/agent/position.service';
@@ -340,12 +340,8 @@ export function commandHandlers(): void {
         `🔄 Processing swap of ${ethAmount} ETH for token ${tokenAddress}`
       );
 
-      // Execute the swap using Relay Router
-      const buyResult = await relayService.buyTokenWithRelayRouter(
-        tokenAddress,
-        ethAmount,
-        slippage
-      );
+      // Execute the swap via Uniswap Trading API
+      const buyResult = await uniswapTradingService.buyTokenWithUniswap(tokenAddress, ethAmount);
 
       await telegramBot.sendMessage(
         chatId,
@@ -450,12 +446,8 @@ export function commandHandlers(): void {
         } tokens of ${tokenAddress} for ETH...`
       );
 
-      // Execute the swap using Relay Router
-      const sellResult = await relayService.sellTokenWithRelayRouter(
-        tokenAddress,
-        tokenAmount,
-        slippage
-      );
+      // Execute the swap via Uniswap Trading API
+      const sellResult = await uniswapTradingService.sellTokenWithUniswap(tokenAddress, tokenAmount);
 
       await telegramBot.sendMessage(
         chatId,

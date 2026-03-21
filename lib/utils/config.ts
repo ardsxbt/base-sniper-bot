@@ -33,7 +33,6 @@ export interface IConfig {
   NODE_ENV: string;
   IS_DEVELOPMENT: boolean;
   SERVICE_MODE: boolean;
-  USE_UNISWAP_TRADING_API: boolean;
   UNISWAP_API_KEY?: string;
   UNISWAP_ROUTER_VERSION: string;
 }
@@ -73,7 +72,6 @@ export const config: IConfig = {
   NODE_ENV: process.env.NODE_ENV || 'production',
   IS_DEVELOPMENT: process.env.NODE_ENV === 'development',
   SERVICE_MODE: process.env.SERVICE_MODE === 'true',
-  USE_UNISWAP_TRADING_API: process.env.USE_UNISWAP_TRADING_API === 'true',
   UNISWAP_API_KEY: process.env.UNISWAP_API_KEY,
   UNISWAP_ROUTER_VERSION: process.env.UNISWAP_ROUTER_VERSION || '2.0',
 };
