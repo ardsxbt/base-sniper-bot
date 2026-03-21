@@ -27,6 +27,43 @@ AI-agent-friendly Base-chain monitoring + execution runtime, designed for autono
   - max holding time auto-close
 - Receipt logging to `agent_log.json`
 
+#### Token scoring model (current)
+
+The runtime scores each candidate token from **0 to 100**:
+
+1. **Liquidity quality**: +40
+   - +40 if liquidity is inside configured range (`minLiquidityEth` to `maxLiquidityEth`)
+   - +0 otherwise
+
+2. **Contract verification**: +20
+   - +20 if token contract verification is detected
+   - +0 otherwise
+
+3. **Metadata sanity**: +10
+   - +10 if token name/symbol look valid
+   - +0 otherwise
+
+4. **24h volume**: +10
+   - +10 if `volume24h >= 5000 USD`
+   - +0 otherwise
+
+5. **Buy/Sell pressure**: +10
+   - +10 if `buys24h / sells24h >= 0.7`
+   - +0 otherwise
+
+6. **Price-change sanity**: +10
+   - +10 if `-35% < priceChange24h < 300%`
+   - +0 otherwise
+
+**Buy trigger:**
+- Candidate becomes BUY only if `score >= minScore` and all guardrails pass.
+
+**Guardrails that force SKIP:**
+- Token still in cooldown window
+- Max concurrent positions reached
+- Agent disabled
+
+
 ### Optional Telegram mode
 Telegram command interface still exists, but is optional.
 In service mode, Telegram is disabled automatically.
