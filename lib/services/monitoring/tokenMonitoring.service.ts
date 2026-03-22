@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import axios from 'axios';
 import { isContractVerified } from '../etherscan.service';
 import { BlacklistUtils } from '../../utils/blacklistUtils';
 import { config } from '../../utils/config';
@@ -18,6 +19,41 @@ import { IPairInfo, TFactorySelected } from '../../interface/token.interface';
 
 class TokenMonitoringService {
   private trackedPairsUniswapV2 = new Set<string>();
+
+  private async estimateEthLiquidityFromDexScreener(
+    token0: string,
+    token1: string
+  ): Promise<number | null> {
+    try {
+      const [ethRes, t0Res, t1Res] = await Promise.all([
+        axios.get('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd', {
+          timeout: 5000,
+        }),
+        axios.get(`https://api.dexscreener.com/latest/dex/tokens/${token0}`, { timeout: 6000 }),
+        axios.get(`https://api.dexscreener.com/latest/dex/tokens/${token1}`, { timeout: 6000 }),
+      ]);
+
+      const ethUsd = Number(ethRes.data?.ethereum?.usd || 0);
+      if (!ethUsd) return null;
+
+      const pairs = [
+        ...(Array.isArray(t0Res.data?.pairs) ? t0Res.data.pairs : []),
+        ...(Array.isArray(t1Res.data?.pairs) ? t1Res.data.pairs : []),
+      ];
+
+      const basePair = pairs.find(
+        (p: any) => p?.chainId === 'base' && Number(p?.liquidity?.usd || 0) > 0
+      );
+      if (!basePair) return null;
+
+      const liqUsd = Number(basePair?.liquidity?.usd || 0);
+      if (!liqUsd) return null;
+
+      return liqUsd / ethUsd;
+    } catch {
+      return null;
+    }
+  }
   private pairAlertHandler: (pairInfo: IPairInfo, exchange: string) => Promise<void> =
     async () => {};
   private trackedPairsUniswapV3 = new Set<string>();
@@ -222,6 +258,32 @@ class TokenMonitoringService {
         };
 
         await this.pairAlertHandler(pairInfo, 'Uniswap V4');
+
+        // Follow-up liquidity refresh (v4 initialize often arrives before meaningful liquidity)
+        const followupDelays = [45_000, 120_000];
+        for (const delayMs of followupDelays) {
+          setTimeout(async () => {
+            try {
+              const estLiqEth = await this.estimateEthLiquidityFromDexScreener(
+                token0.address,
+                token1.address
+              );
+              if (!estLiqEth || estLiqEth <= 0) return;
+
+              const updated: IPairInfo = {
+                ...pairInfo,
+                liquidityETH: estLiqEth,
+              };
+
+              console.log(
+                `🟪 V4 follow-up liquidity update for ${poolId}: ${estLiqEth.toFixed(2)} ETH`
+              );
+              await this.pairAlertHandler(updated, 'Uniswap V4');
+            } catch (err) {
+              console.error(`V4 follow-up check failed for ${poolId}:`, err);
+            }
+          }, delayMs);
+        }
       } catch (error) {
         console.error(`Error processing V4 pool ${poolId}:`, error);
       }
