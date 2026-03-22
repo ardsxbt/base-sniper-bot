@@ -8,6 +8,8 @@ Built for Base-first monitoring, Uniswap-powered execution, and hackathon-grade 
 
 ## Documentation Index
 
+- [Architecture (One-Page)](./ARCHITECTURE.md)
+- [Judge Quick Start](./JUDGE_QUICKSTART.md)
 - [Monitoring Flow](./MONITORING_FLOW.md)
 - [x402 Payment Flow](./X402_FLOW.md)
 
