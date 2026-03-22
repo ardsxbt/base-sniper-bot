@@ -59,27 +59,33 @@ class UniswapTradingService {
   private async quote(
     tokenIn: string,
     tokenOut: string,
-    amount: string
+    amount: string,
+    preferV4 = false
   ): Promise<IUniswapQuoteResponse> {
     const slippageCandidates = [0.5, 1, 3];
     let last: IUniswapQuoteResponse | undefined;
 
     for (const slippageTolerance of slippageCandidates) {
-      const res = await axios.post(
-        `${UNISWAP_API}/quote`,
-        {
-          swapper: this.wallet.address,
-          tokenIn,
-          tokenOut,
-          tokenInChainId: String(config.BASE_CHAIN_ID),
-          tokenOutChainId: String(config.BASE_CHAIN_ID),
-          amount,
-          type: 'EXACT_INPUT',
-          slippageTolerance,
-          routingPreference: 'BEST_PRICE',
-        },
-        { headers: this.headers() }
-      );
+      const basePayload: Record<string, unknown> = {
+        swapper: this.wallet.address,
+        tokenIn,
+        tokenOut,
+        tokenInChainId: String(config.BASE_CHAIN_ID),
+        tokenOutChainId: String(config.BASE_CHAIN_ID),
+        amount,
+        type: 'EXACT_INPUT',
+        slippageTolerance,
+        routingPreference: 'BEST_PRICE',
+      };
+
+      let res;
+      try {
+        const payload = preferV4 ? { ...basePayload, protocols: ['V4', 'V3', 'V2'] } : basePayload;
+        res = await axios.post(`${UNISWAP_API}/quote`, payload, { headers: this.headers() });
+      } catch (e) {
+        // fallback to default quote shape in case protocol filtering is unsupported
+        res = await axios.post(`${UNISWAP_API}/quote`, basePayload, { headers: this.headers() });
+      }
 
       const quote = res.data as IUniswapQuoteResponse;
       last = quote;
@@ -132,9 +138,13 @@ class UniswapTradingService {
     return tx.hash;
   }
 
-  async buyTokenWithUniswap(tokenAddress: string, ethAmount: number): Promise<IUniswapSwapResult> {
+  async buyTokenWithUniswap(
+    tokenAddress: string,
+    ethAmount: number,
+    preferV4 = false
+  ): Promise<IUniswapSwapResult> {
     const amount = ethers.parseEther(ethAmount.toString()).toString();
-    const quote = await this.quote(config.ETH_ADDRESS, tokenAddress, amount);
+    const quote = await this.quote(config.ETH_ADDRESS, tokenAddress, amount, preferV4);
     const signature = await this.signPermitIfNeeded(quote);
     const txHash = await this.swapFromQuote(quote, signature);
     const tokenInfo = await checkUserTokenInfo(tokenAddress);
@@ -143,7 +153,8 @@ class UniswapTradingService {
 
   async sellTokenWithUniswap(
     tokenAddress: string,
-    tokenAmount: string
+    tokenAmount: string,
+    preferV4 = false
   ): Promise<IUniswapSwapResult> {
     const tokenInfo = await checkUserTokenInfo(tokenAddress);
     const amount =
@@ -153,7 +164,7 @@ class UniswapTradingService {
 
     await this.checkApproval(tokenAddress, amount);
 
-    const quote = await this.quote(tokenAddress, config.ETH_ADDRESS, amount);
+    const quote = await this.quote(tokenAddress, config.ETH_ADDRESS, amount, preferV4);
     const signature = await this.signPermitIfNeeded(quote);
     const txHash = await this.swapFromQuote(quote, signature);
     const updated = await checkUserTokenInfo(tokenAddress);

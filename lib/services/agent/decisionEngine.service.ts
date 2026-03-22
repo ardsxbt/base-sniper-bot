@@ -117,6 +117,12 @@ class DecisionEngineService {
       reasons.push(`+0 unstable price-change ${signals.priceChange24h?.toFixed(2) || 'n/a'}%`);
     }
 
+    // 6) Explicit v4 strategy boost
+    if (policy.strategyPath === 'v4_explicit') {
+      score += policy.v4ScoreBoost;
+      reasons.push(`+${policy.v4ScoreBoost} v4 strategy boost`);
+    }
+
     const cooldownKey = token.address.toLowerCase();
     const lastTs = this.lastActionMap.get(cooldownKey) || 0;
     const cooldownMs = policy.cooldownMinutes * 60 * 1000;
@@ -163,6 +169,7 @@ class DecisionEngineService {
       liquidityEth: ctx.pairInfo.liquidityETH,
       decision,
       executionMode: policy.executionMode,
+      strategyPath: policy.strategyPath,
       status: 'skipped',
     };
 
@@ -207,7 +214,8 @@ class DecisionEngineService {
 
       const buyResult = await uniswapTradingService.buyTokenWithUniswap(
         token.address,
-        decision.amountEth
+        decision.amountEth,
+        policy.strategyPath === 'v4_explicit'
       );
 
       receipt.status = 'submitted';

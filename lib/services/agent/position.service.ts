@@ -25,14 +25,14 @@ class AgentPositionService {
     this.save(positions);
   }
 
-  async closePosition(tokenAddress: string, reason: string): Promise<string> {
+  async closePosition(tokenAddress: string, reason: string, preferV4 = false): Promise<string> {
     const positions = this.getPositions();
     const idx = positions.findIndex(
       p => p.status === 'open' && p.tokenAddress.toLowerCase() === tokenAddress.toLowerCase()
     );
     if (idx < 0) throw new Error('Open position not found');
 
-    const result = await uniswapTradingService.sellTokenWithUniswap(tokenAddress, 'max');
+    const result = await uniswapTradingService.sellTokenWithUniswap(tokenAddress, 'max', preferV4);
     positions[idx].status = 'closed';
     positions[idx].closeTxHash = result.txHash;
     positions[idx].closeReason = reason;
@@ -62,6 +62,7 @@ class AgentPositionService {
   async evaluateRiskAndClose(): Promise<void> {
     const policy = agentPolicyService.getPolicy();
     if (!policy.enabled || policy.executionMode !== 'live') return;
+    const preferV4 = policy.strategyPath === 'v4_explicit';
 
     const openPositions = this.getOpenPositions();
     for (const pos of openPositions) {
@@ -73,7 +74,8 @@ class AgentPositionService {
         if (heldMinutes >= policy.maxHoldingMinutes) {
           const tx = await this.closePosition(
             pos.tokenAddress,
-            `Max holding ${policy.maxHoldingMinutes}m`
+            `Max holding ${policy.maxHoldingMinutes}m`,
+            preferV4
           );
           console.log(`⏱️ Closed ${pos.symbol} by max holding rule | tx=${tx}`);
           continue;
@@ -87,7 +89,8 @@ class AgentPositionService {
         if (pnlPercent >= policy.takeProfitPercent) {
           const tx = await this.closePosition(
             pos.tokenAddress,
-            `Take profit ${policy.takeProfitPercent}%`
+            `Take profit ${policy.takeProfitPercent}%`,
+            preferV4
           );
           console.log(`💰 TP hit for ${pos.symbol} (${pnlPercent.toFixed(2)}%) | tx=${tx}`);
           continue;
@@ -96,7 +99,8 @@ class AgentPositionService {
         if (pnlPercent <= -policy.stopLossPercent) {
           const tx = await this.closePosition(
             pos.tokenAddress,
-            `Stop loss ${policy.stopLossPercent}%`
+            `Stop loss ${policy.stopLossPercent}%`,
+            preferV4
           );
           console.log(`🛑 SL hit for ${pos.symbol} (${pnlPercent.toFixed(2)}%) | tx=${tx}`);
           continue;

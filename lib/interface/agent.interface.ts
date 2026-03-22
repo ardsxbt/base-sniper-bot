@@ -2,9 +2,12 @@ import { IPairInfo } from './token.interface';
 
 export type TExecutionMode = 'paper' | 'live';
 
+export type TStrategyPath = 'classic' | 'v4_explicit';
+
 export interface IAgentConfig {
   enabled: boolean;
   executionMode: TExecutionMode;
+  strategyPath: TStrategyPath;
   minScore: number;
   maxConcurrentPositions: number;
   cooldownMinutes: number;
@@ -15,6 +18,7 @@ export interface IAgentConfig {
   takeProfitPercent: number;
   stopLossPercent: number;
   maxHoldingMinutes: number;
+  v4ScoreBoost: number;
 }
 
 export interface IAgentDecision {
@@ -33,6 +37,7 @@ export interface IAgentReceipt {
   liquidityEth: number;
   decision: IAgentDecision;
   executionMode: TExecutionMode;
+  strategyPath: TStrategyPath;
   txHash?: string;
   status: 'simulated' | 'submitted' | 'failed' | 'skipped';
   error?: string;

@@ -4,6 +4,7 @@ import { stateService } from '../state.service';
 const DEFAULT_POLICY: IAgentConfig = {
   enabled: false,
   executionMode: 'paper',
+  strategyPath: 'classic',
   minScore: 65,
   maxConcurrentPositions: 3,
   cooldownMinutes: 15,
@@ -14,6 +15,7 @@ const DEFAULT_POLICY: IAgentConfig = {
   takeProfitPercent: 30,
   stopLossPercent: 15,
   maxHoldingMinutes: 180,
+  v4ScoreBoost: 8,
 };
 
 class AgentPolicyService {
