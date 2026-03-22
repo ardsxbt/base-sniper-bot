@@ -6,6 +6,11 @@ Built for Base-first monitoring, Uniswap-powered execution, and hackathon-grade 
 
 ---
 
+## Documentation Index
+
+- [Monitoring Flow](./MONITORING_FLOW.md)
+- [x402 Payment Flow](./X402_FLOW.md)
+
 ## 1) What this app does
 
 Base Hunter Runtime continuously monitors newly created pools, scores opportunities using deterministic risk rules, and can execute micro-sized swaps with strict policy guardrails.
