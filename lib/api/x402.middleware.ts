@@ -1,25 +1,38 @@
 import { Request, Response, NextFunction } from 'express';
+import { paymentService } from './payment.service';
 
 /**
- * Minimal x402-style payment gate scaffold.
+ * x402 payment gate with onchain USDC transfer verification.
  *
- * NOTE: This enforces a paid-header contract for hackathon demos.
- * Replace header checks with full x402 verification integration when wiring
- * a production payment verifier.
+ * Header contract:
+ *   x-402-payment: <txHash>
  */
 export function requireX402(priceUsd: number) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const paymentHeader = req.header('x-402-payment');
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const paymentTxHash = req.header('x-402-payment');
 
-    if (!paymentHeader) {
-      return res.status(402).json({
-        error: 'Payment Required',
-        hint: 'Provide x-402-payment header',
-        priceUsd,
-        accepts: 'x402',
-      });
+    if (!paymentTxHash) {
+      return res.status(402).json(paymentService.getChallenge(priceUsd));
     }
 
-    return next();
+    try {
+      const verification = await paymentService.verifyUsdcTransfer(paymentTxHash, priceUsd);
+      if (!verification.ok) {
+        return res.status(402).json({
+          ...paymentService.getChallenge(priceUsd),
+          reason: verification.reason,
+        });
+      }
+
+      (req as any).x402 = {
+        payer: verification.payer,
+        paidAmountUsd: verification.paidAmountUsd,
+        txHash: paymentTxHash,
+      };
+
+      return next();
+    } catch (error) {
+      return res.status(500).json({ error: `x402 verification failed: ${error}` });
+    }
   };
 }

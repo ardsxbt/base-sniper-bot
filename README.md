@@ -156,9 +156,22 @@ Body:
 
 ### x402 behavior
 - `X402_ENABLED=false`: endpoints run without payment gate (dev/test mode)
-- `X402_ENABLED=true`: paid endpoints return `402 Payment Required` without payment header
+- `X402_ENABLED=true`: paid endpoints enforce onchain payment verification
 
-> Current middleware is scaffold-level and intentionally simple for hackathon iteration.
+Payment flow when enabled:
+1. Call paid endpoint without `x-402-payment` header
+2. Receive `402 Payment Required` challenge (token, receiver, amount)
+3. Send USDC payment on active chain to challenge receiver
+4. Retry endpoint with header: `x-402-payment: <txHash>`
+5. Server verifies tx receipt contains USDC Transfer to receiver with required minimum amount
+
+Replay protection:
+- payment tx hashes are stored in `x402-used-txs.json` and cannot be reused.
+
+Current implementation:
+- verifies USDC Transfer log in payment tx
+- validates minimum USD amount per endpoint
+- intended for hackathon-grade real-payment proof; production deployments should add stronger anti-fraud checks (payer binding, expiry windows, nonce contracts).
 
 ---
 

@@ -8,7 +8,9 @@ import { requireX402 } from './x402.middleware';
 import { analyzeToken } from './analyze.service';
 
 function paymentGate(priceUsd: number) {
-  return config.X402_ENABLED ? requireX402(priceUsd) : (_req: any, _res: any, next: any) => next();
+  return config.X402_ENABLED
+    ? requireX402(priceUsd)
+    : (_req: express.Request, _res: express.Response, next: express.NextFunction) => next();
 }
 
 class ApiServer {
@@ -47,7 +49,8 @@ class ApiServer {
         .filter(i => i.score >= minScore)
         .slice(-limit)
         .reverse();
-      res.json({ items });
+      const payment = (req as any).x402;
+      res.json({ items, payment });
     });
 
     this.app.post('/api/v1/analyze', paymentGate(1), async (req, res) => {
@@ -57,7 +60,7 @@ class ApiServer {
           return res.status(400).json({ error: 'invalid tokenAddress' });
         }
         const result = await analyzeToken(tokenAddress);
-        return res.json(result);
+        return res.json({ ...result, payment: (req as any).x402 });
       } catch (error) {
         return res.status(500).json({ error: String(error) });
       }
@@ -96,6 +99,7 @@ class ApiServer {
           amountEth,
           token: result.tokenInfo.symbol,
           chain: config.ACTIVE_CHAIN,
+          payment: (req as any).x402,
         });
       } catch (error) {
         return res.status(500).json({ error: String(error) });
