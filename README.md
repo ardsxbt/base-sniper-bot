@@ -1,243 +1,253 @@
-# Base Hunter Runtime 🤖
+# Base Hunter Runtime
 
-AI-agent-friendly Base-chain monitoring + execution runtime, designed for autonomous operation in service mode (no Telegram required).
+Production-oriented autonomous agent runtime for onchain token discovery, scoring, guarded execution, and paid API access.
 
-## What it can do
+Built for Base-first monitoring, Uniswap-powered execution, and hackathon-grade verifiable workflows.
 
-### Core monitoring
-- Uniswap V2 `PairCreated` listener (Base)
-- Uniswap V3 `PoolCreated` + first Mint liquidity detection
-- ENS identity helper module for forward/reverse name resolution in runtime logs
-- Note: discovery monitoring remains Base-first; chain adapter currently applies to swap execution chain
-- Liquidity window filtering: `MIN_LIQUIDITY_ETH < liquidity < MAX_LIQUIDITY_ETH`
-- Optional token contract verification check (Etherscan)
+---
 
-### Trading execution
-- Uniswap Trading API buy/sell (Base + Unichain via chain adapter)
-- Permit2 signing-aware swap request flow for Uniswap route types
-- Explicit v4 strategy path (`strategyPath=v4_explicit`) with v4-preferred quoting
-- Hook-aware pre/post risk gating (`hookGuardEnabled=true`)
-- Sell `max` support
+## 1) What this app does
 
-### Agent service API (x402-ready)
-- `/api/v1/health` (free)
-- `/api/v1/meta` (free)
-- `/api/v1/signal/latest` (x402-gated)
-- `/api/v1/analyze` (x402-gated)
-- `/api/v1/execute/buy` (x402-gated)
-- `X402_ENABLED=true` enables 402 challenge-gate behavior
+Base Hunter Runtime continuously monitors newly created pools, scores opportunities using deterministic risk rules, and can execute micro-sized swaps with strict policy guardrails.
 
-### Autonomous agent layer (new)
-- Candidate scoring + policy-driven decision (`BUY` / `SKIP`)
-- Execution modes:
-  - `paper` (simulation only)
-  - `live` (real on-chain execution)
-- Position management:
-  - max concurrent positions
-  - take-profit (TP)
-  - stop-loss (SL)
-  - max holding time auto-close
-- Receipt logging to `agent_log.json`
+It also exposes an **x402-ready service API** so other agents/humans can pay for token signals, risk analysis, and guarded execution endpoints.
 
-#### Token scoring model (current)
+Core goals:
+- Detect opportunities early
+- Reduce rug-risk with explicit scoring + guardrails
+- Execute safely with small position sizing
+- Keep an auditable trail (logs/receipts)
 
-The runtime scores each candidate token from **0 to 100**:
+---
 
-1. **Liquidity quality**: +40
-   - +40 if liquidity is inside configured range (`minLiquidityEth` to `maxLiquidityEth`)
-   - +0 otherwise
+## 2) Main features
 
-2. **Contract verification**: +20
-   - +20 if token contract verification is detected
-   - +0 otherwise
+### A. Onchain monitoring
+- Uniswap V2 `PairCreated` monitoring (Base)
+- Uniswap V3 `PoolCreated` + first-liquidity detection (Base)
+- Liquidity range filtering
 
-3. **Metadata sanity**: +10
-   - +10 if token name/symbol look valid
-   - +0 otherwise
+### B. Strategy & scoring engine
+- Deterministic token scoring model (0–100)
+- Guardrails to force SKIP under unsafe conditions
+- Optional explicit `v4` strategy path (`strategyPath=v4_explicit`)
+- Hook-aware pre/post risk gating (`hookGuardEnabled`)
 
-4. **24h volume**: +10
-   - +10 if `volume24h >= 5000 USD`
-   - +0 otherwise
+### C. Execution engine (Uniswap)
+- Uniswap Trading API integration (real API key)
+- Permit2-aware signing flow when quote contains permit data
+- Slippage fallback quote retries
+- Buy and sell execution path with transaction receipts
 
-5. **Buy/Sell pressure**: +10
-   - +10 if `buys24h / sells24h >= 0.7`
-   - +0 otherwise
+### D. Position management
+- Max concurrent positions
+- Cooldown per token
+- Take-profit / stop-loss
+- Max-holding-time auto close
 
-6. **Price-change sanity**: +10
-   - +10 if `-35% < priceChange24h < 300%`
-   - +0 otherwise
+### E. Service API (x402-ready)
+- Public health/meta endpoints
+- Paid signal and analysis endpoints
+- Paid guarded buy endpoint
+- Optional payment gate behavior via `X402_ENABLED`
 
-7. **v4 strategy boost**: `+v4ScoreBoost`
-   - Applied when policy sets `strategyPath = v4_explicit`
+### F. Multi-chain execution adapter
+- Active execution chain switch: `base | unichain`
+- Chain-aware quote/swap path
 
-**Buy trigger:**
-- Candidate becomes BUY only if `score >= minScore` and all guardrails pass.
+> Note: discovery monitoring is currently Base-first; chain adapter currently applies to execution path.
 
-**Guardrails that force SKIP:**
-- Token still in cooldown window
-- Max concurrent positions reached
+---
+
+## 3) Architecture (high level)
+
+1. **Event Monitor**
+   - listens to new pool/pair events
+2. **Decision Engine**
+   - scores candidate
+   - applies guardrails
+3. **Execution Layer**
+   - quote → sign (if needed) → swap via Uniswap API
+4. **Position Manager**
+   - periodic TP/SL/max-holding checks
+5. **Service API**
+   - paid endpoints for agents/humans
+6. **Persistence / Receipts**
+   - state + decision/execution logs
+
+---
+
+## 4) Token scoring model
+
+Current scoring model totals **0–100**:
+
+1. **Liquidity quality**: +40  
+   +40 if liquidity in configured range, else +0
+
+2. **Contract verification**: +20  
+   +20 if verification detected, else +0
+
+3. **Metadata sanity**: +10  
+   +10 for valid name/symbol metadata, else +0
+
+4. **24h volume**: +10  
+   +10 if volume threshold met, else +0
+
+5. **Buy/Sell pressure**: +10  
+   +10 if buy/sell ratio threshold met, else +0
+
+6. **Price-change sanity**: +10  
+   +10 if movement is in acceptable window, else +0
+
+7. **v4 strategy boost**: `+v4ScoreBoost` (policy-driven)
+
+### Buy trigger
+Candidate becomes BUY only if:
+- `score >= minScore`
+- all guardrails pass
+
+### Guardrails that force SKIP
 - Agent disabled
-- Hook pre-swap guard fails (`hookGuardEnabled=true`)
-
-#### Hook-aware gating (phase 3)
-
-When `hookGuardEnabled=true`, runtime applies deterministic hook-style checks:
-- **pre-swap hook gate**: rejects candidates outside strategy liquidity envelope
-- **post-swap hook check**: records a post-execution guard result in logs
-
-This provides an explicit hook-oriented strategy layer for Uniswap v4-focused submissions while keeping execution path production-safe.
-
-
-## Run mode
-
-Service mode only (AI-agent runtime, no Telegram).
-
-This mode is optimized for agent orchestrators (OpenClaw/CLI/systemd) where another agent or service supervises logs, receipts, and policy state.
-
-```bash
-npm run dev
-```
-
-Behavior:
-- Starts monitoring runtime internally
-- Starts API service for paid utility endpoints
-- Runs decision engine + policy checks
-- Runs TP/SL/max-holding position loop
-- Writes receipts to `agent_log.json`
-
+- Cooldown active
+- Max concurrent positions reached
+- Hook pre-swap gate fails (when enabled)
 
 ---
 
-## Requirements
+## 5) API documentation (x402-ready)
 
-- Node 18+
-- Base RPC / provider endpoints (Alchemy or other)
-- Wallet private key (only for `live` execution)
-- Etherscan API key (optional but recommended)
+Base URL (local):
+`http://localhost:8787/api/v1`
+
+### Free endpoints
+
+#### `GET /health`
+Returns service health/version/active chain.
+
+#### `GET /meta`
+Returns capabilities + pricing + x402 mode.
+
+### Paid endpoints (x402-gated when enabled)
+
+#### `GET /signal/latest`
+Returns latest high-score candidate alerts.
+
+Query:
+- `minScore` (default: 70)
+- `limit` (default: 5, max: 20)
+
+#### `POST /analyze`
+Deep analysis for one token.
+
+Body:
+```json
+{ "tokenAddress": "0x..." }
+```
+
+#### `POST /execute/buy`
+Guarded buy execution.
+
+Body:
+```json
+{ "tokenAddress": "0x...", "amountUsd": 1 }
+```
+
+### x402 behavior
+- `X402_ENABLED=false`: endpoints run without payment gate (dev/test mode)
+- `X402_ENABLED=true`: paid endpoints return `402 Payment Required` without payment header
+
+> Current middleware is scaffold-level and intentionally simple for hackathon iteration.
 
 ---
 
-## Quick start
+## 6) ENS integration
 
-1. Clone + install
-```bash
-git clone https://github.com/ardsxbt/base-hunter-runtime.git
-cd base-hunter-runtime
-npm install
-```
+Runtime includes ENS helper module:
+- forward resolve (`name -> address`)
+- reverse resolve (`address -> name`)
+- identity formatting for execution logs
 
-2. Create env
+Log style example:
+`token.eth (0xabc...1234)` fallback to short hex if ENS unavailable.
+
+---
+
+## 7) Configuration
+
+Copy env template:
 ```bash
 cp .env.example .env
 ```
 
-3. Start in safe mode (service + paper)
+Important variables:
+- `ACTIVE_CHAIN=base|unichain`
+- `BASE_MAINET_RPC_URL`
+- `UNICHAIN_RPC_URL`
+- `ALCHEMY_WS_URL`
+- `ALCHEMY_HTTP_URL`
+- `WALLET_PRIVATE_KEY`
+- `UNISWAP_API_KEY`
+- `UNISWAP_ROUTER_VERSION`
+- `API_PORT` (default 8787)
+- `X402_ENABLED=true|false`
+- `MIN_LIQUIDITY_ETH`
+- `MAX_LIQUIDITY_ETH`
+
+---
+
+## 8) Runtime modes
+
+Service-only runtime (no Telegram mode).
+
+### Development
 ```bash
 npm run dev
 ```
 
-4. Build check
+### Production
 ```bash
 npm run build
+npm start
 ```
 
----
-
-## Key config
-
-Uniswap Trading API config (required for swaps):
-- `UNISWAP_API_KEY` must be set
-- `UNISWAP_ROUTER_VERSION` defaults to `2.0`
-
-
-From `.env`:
-
-- `ACTIVE_CHAIN` (`base` or `unichain`) → active execution chain
-- `BASE_MAINET_RPC_URL`, `UNICHAIN_RPC_URL` → chain RPC endpoints
-- `ALCHEMY_WS_URL`, `ALCHEMY_HTTP_URL` → Base event monitoring endpoints
-- `WALLET_PRIVATE_KEY` → required for live transactions
-- `MIN_LIQUIDITY_ETH`, `MAX_LIQUIDITY_ETH` → pool filter
-
-ENS integration behavior:
-- runtime accepts ENS-style identity formatting in logs via reverse resolution
-- on BUY execution logs, token identity is formatted as `ensName (0xabc...1234)` when available
-- falls back to short hex when ENS is unavailable
-
-Agent policy is stored in state (`agentPolicy`) and includes:
-- `enabled`
-- `executionMode` (`paper` or `live`)
-- `minScore`
-- `maxConcurrentPositions`
-- `defaultBuyEth`, `maxBuyEth`
-- `takeProfitPercent`, `stopLossPercent`
-- `maxHoldingMinutes`
-- `strategyPath` (`classic` or `v4_explicit`)
-- `v4ScoreBoost`
-- `hookGuardEnabled`
+Systemd unit is supported (`base-agent.service`).
 
 ---
 
-## State and logs
+## 9) State & output files
 
-State file selected by `NODE_ENV`:
+State file by environment:
+- `state.json` (production)
+- `state-dev.json` (non-production)
 
-| Environment | File |
-|---|---|
-| production | `state.json` |
-| non-production | `state-dev.json` |
-
-Runtime outputs:
-- `agent_log.json` → autonomous decision/execution receipts
-
-Minimal state starter:
-
-```json
-{
-  "tokenBlacklist": [],
-  "walletAddresses": [],
-  "factorySelected": ["uniswapV2", "uniswapV3"],
-  "agentPolicy": {
-    "enabled": false,
-    "executionMode": "paper"
-  },
-  "agentPositions": []
-}
-```
+Common outputs:
+- `agent_log.json` — decision/execution receipts
+- `pending-candidate-alerts.json` — candidate queue
+- `pending-swap-notify.json` — swap notification queue
 
 ---
 
-## API quick test
+## 10) Quick verification checklist
 
-```bash
-curl http://localhost:8787/api/v1/health
-curl http://localhost:8787/api/v1/meta
-```
-
-With `X402_ENABLED=true`, paid endpoints return HTTP 402 unless `x-402-payment` header is present.
-
-## Scripts
-
-```bash
-npm run dev      # nodemon + ts-node
-npm run dev:ts   # ts-node once
-npm run build    # tsc compile to dist
-npm start        # production (needs build)
-npm run lint
-```
+1. Start service
+2. `GET /api/v1/health`
+3. `GET /api/v1/meta`
+4. Trigger/analyze a token via `/api/v1/analyze`
+5. Confirm logs are written
+6. Confirm Uniswap quote path works with configured API key
 
 ---
 
-## Safety notes
+## 11) Security notes
 
-- Start with `executionMode=paper`
-- Enable `live` only after validating logs and policy
-- Use small default buy size when testing live
-- Keep private keys and API keys out of git
+- Never commit secrets (`.env`, private keys, API keys)
+- Use minimal execution amounts in live mode
+- Keep strict guardrails enabled in production
+- Monitor and rotate API keys as needed
 
 ---
 
-## Disclaimer
+## 12) License / disclaimer
 
-Educational use only. No warranty. You assume all risk.
-
-MIT License.
+MIT License.  
+Educational/experimental software — use at your own risk.
