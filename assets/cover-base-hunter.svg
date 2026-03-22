@@ -1,0 +1,33 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0A1120"/>
+      <stop offset="1" stop-color="#162E66"/>
+    </linearGradient>
+    <linearGradient id="card" x1="70" y1="70" x2="1210" y2="650" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F1A35"/>
+      <stop offset="1" stop-color="#13244A"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <rect x="70" y="70" width="1140" height="580" rx="28" fill="url(#card)" stroke="#6A8DFF" stroke-width="3"/>
+  <rect x="110" y="120" width="1060" height="130" rx="18" fill="#1A2B54" stroke="#6A8DFF" stroke-width="2"/>
+
+  <text x="140" y="200" fill="#EEF4FF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="68" font-weight="700">Base Hunter Runtime</text>
+  <text x="140" y="287" fill="#BDD0FF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="34">Autonomous Agent Service for Onchain Discovery, Guarded Trading, and x402 Paid API</text>
+
+  <circle cx="152" cy="395" r="8" fill="#8EAAFF"/>
+  <text x="180" y="404" fill="#E0EAFF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="30">Uniswap V2 / V3 / V4 Monitoring</text>
+
+  <circle cx="152" cy="457" r="8" fill="#8EAAFF"/>
+  <text x="180" y="466" fill="#E0EAFF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="30">Deterministic Risk Scoring + Guardrails</text>
+
+  <circle cx="152" cy="519" r="8" fill="#8EAAFF"/>
+  <text x="180" y="528" fill="#E0EAFF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="30">Uniswap Trading API Execution</text>
+
+  <circle cx="152" cy="581" r="8" fill="#8EAAFF"/>
+  <text x="180" y="590" fill="#E0EAFF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="30">x402 USDC Payment-Gated Endpoints</text>
+
+  <text x="140" y="632" fill="#95B0F5" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="27">Built on Base • Service Mode • Verifiable Onchain Proofs</text>
+</svg>
