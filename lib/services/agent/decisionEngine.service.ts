@@ -9,6 +9,7 @@ import { agentPositionService } from './position.service';
 import { candidateAlertService } from './candidateAlert.service';
 import { swapNotifyService } from './swapNotify.service';
 import { hookGuardService } from './hookGuard.service';
+import { ensService } from '../ens.service';
 
 class DecisionEngineService {
   private lastActionMap = new Map<string, number>();
@@ -202,6 +203,8 @@ class DecisionEngineService {
         return;
       }
 
+      const tokenIdentity = await ensService.formatIdentity(token.address);
+
       if (policy.executionMode === 'paper' || !config.WALLET_PRIVATE_KEY) {
         receipt.status = 'simulated';
         this.lastActionMap.set(token.address.toLowerCase(), Date.now());
@@ -216,7 +219,7 @@ class DecisionEngineService {
           reason: decision.reasons.join(' | '),
         });
         console.log(
-          `🤖 PAPER BUY ${decision.amountEth} ETH of ${token.symbol} | score=${decision.score} | ${decision.reasons.join(' | ')}`
+          `🤖 PAPER BUY ${decision.amountEth} ETH of ${token.symbol} [${tokenIdentity}] | score=${decision.score} | ${decision.reasons.join(' | ')}`
         );
         return;
       }
@@ -260,7 +263,7 @@ class DecisionEngineService {
       }
 
       console.log(
-        `🤖 LIVE BUY ${decision.amountEth} ETH of ${token.symbol} | tx=${buyResult.txHash} | score=${decision.score}`
+        `🤖 LIVE BUY ${decision.amountEth} ETH of ${token.symbol} [${tokenIdentity}] | tx=${buyResult.txHash} | score=${decision.score}`
       );
     } catch (error) {
       receipt.status = 'failed';

@@ -7,6 +7,7 @@ AI-agent-friendly Base-chain monitoring + execution runtime, designed for autono
 ### Core monitoring
 - Uniswap V2 `PairCreated` listener (Base)
 - Uniswap V3 `PoolCreated` + first Mint liquidity detection
+- ENS identity helper module for forward/reverse name resolution in runtime logs
 - Note: discovery monitoring remains Base-first; chain adapter currently applies to swap execution chain
 - Liquidity window filtering: `MIN_LIQUIDITY_ETH < liquidity < MAX_LIQUIDITY_ETH`
 - Optional token contract verification check (Etherscan)
@@ -147,6 +148,11 @@ From `.env`:
 - `ALCHEMY_WS_URL`, `ALCHEMY_HTTP_URL` → Base event monitoring endpoints
 - `WALLET_PRIVATE_KEY` → required for live transactions
 - `MIN_LIQUIDITY_ETH`, `MAX_LIQUIDITY_ETH` → pool filter
+
+ENS integration behavior:
+- runtime accepts ENS-style identity formatting in logs via reverse resolution
+- on BUY execution logs, token identity is formatted as `ensName (0xabc...1234)` when available
+- falls back to short hex when ENS is unavailable
 
 Agent policy is stored in state (`agentPolicy`) and includes:
 - `enabled`
