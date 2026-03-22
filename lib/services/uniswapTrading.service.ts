@@ -148,7 +148,9 @@ class UniswapTradingService {
     console.log(
       `🦄 Uniswap buy on ${getActiveChain()} | chainId=${getActiveChainId()} | token=${tokenAddress}`
     );
-    const amount = ethers.parseEther(ethAmount.toString()).toString();
+    const normalizedEthAmount = Math.max(0, Number(ethAmount));
+    const amountEthStr = normalizedEthAmount.toFixed(12).replace(/\.?0+$/, '');
+    const amount = ethers.parseEther(amountEthStr).toString();
     const quote = await this.quote(config.ETH_ADDRESS, tokenAddress, amount, preferV4);
     const signature = await this.signPermitIfNeeded(quote);
     const txHash = await this.swapFromQuote(quote, signature);
