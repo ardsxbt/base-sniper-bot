@@ -2,7 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import { ethers } from 'ethers';
 import { config } from '../utils/config';
-import { getActiveChain, getActiveChainId, getActiveProvider } from '../utils/chain';
 
 const TRANSFER_TOPIC = ethers.id('Transfer(address,address,uint256)');
 
@@ -43,7 +42,8 @@ class PaymentService {
       return { ok: false, reason: 'payment tx already used' };
     }
 
-    const provider = getActiveProvider();
+    // x402 settlement currently verifies USDC on Base mainnet
+    const provider = new ethers.JsonRpcProvider(config.BASE_MAINET_RPC_URL);
     const receipt = await provider.getTransactionReceipt(txHash);
     if (!receipt) return { ok: false, reason: 'payment tx not found' };
     if (receipt.status !== 1) return { ok: false, reason: 'payment tx failed' };
@@ -85,8 +85,8 @@ class PaymentService {
     return {
       error: 'Payment Required',
       accepts: 'x402',
-      chain: getActiveChain(),
-      chainId: getActiveChainId(),
+      chain: 'base',
+      chainId: config.BASE_CHAIN_ID,
       token: 'USDC',
       tokenAddress: config.USDC_ADDRESS,
       amountUsd: priceUsd,

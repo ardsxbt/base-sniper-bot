@@ -17,7 +17,7 @@ Built for Base-first monitoring, Uniswap-powered execution, and hackathon-grade 
 
 Base Hunter Runtime continuously monitors newly created pools, scores opportunities using deterministic risk rules, and can execute micro-sized swaps with strict policy guardrails.
 
-It also exposes an **x402-ready service API** so other agents/humans can pay for token signals, risk analysis, and guarded execution endpoints.
+It also exposes an **x402 payment-gated service API** so other agents/humans can pay for token signals, risk analysis, and guarded execution endpoints.
 
 Core goals:
 - Detect opportunities early
@@ -54,7 +54,7 @@ Core goals:
 - Take-profit / stop-loss
 - Max-holding-time auto close
 
-### E. Service API (x402-ready)
+### E. Service API (x402 payment-gated)
 - Public health/meta endpoints
 - Paid signal and analysis endpoints
 - Paid guarded buy endpoint
@@ -168,7 +168,7 @@ Body:
 Payment flow when enabled:
 1. Call paid endpoint without `x-402-payment` header
 2. Receive `402 Payment Required` challenge (token, receiver, amount)
-3. Send USDC payment on active chain to challenge receiver
+3. Send USDC payment on **Base mainnet** to challenge receiver
 4. Retry endpoint with header: `x-402-payment: <txHash>`
 5. Server verifies tx receipt contains USDC Transfer to receiver with required minimum amount
 
@@ -178,6 +178,7 @@ Replay protection:
 Current implementation:
 - verifies USDC Transfer log in payment tx
 - validates minimum USD amount per endpoint
+- x402 settlement path currently targets **USDC on Base mainnet**
 - intended for hackathon-grade real-payment proof; production deployments should add stronger anti-fraud checks (payer binding, expiry windows, nonce contracts).
 
 ---

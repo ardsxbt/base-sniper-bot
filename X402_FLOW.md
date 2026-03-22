@@ -34,7 +34,7 @@ X402_ENABLED=true
    - required amount
    - usage instruction
 
-3. Client sends USDC transfer onchain to receiver
+3. Client sends USDC transfer on **Base mainnet** to receiver
 4. Client retries endpoint with:
 
 ```http
@@ -45,7 +45,7 @@ x-402-payment: <txHash>
 
 On retry, server verifies:
 
-- tx exists and succeeded
+- tx exists and succeeded (Base mainnet)
 - tx includes `USDC Transfer` log
 - recipient is service receiver wallet
 - amount paid meets required USD amount

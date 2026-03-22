@@ -48,6 +48,7 @@ curl -i http://127.0.0.1:8787/api/v1/signal/latest
 Expected:
 - HTTP `402 Payment Required`
 - challenge payload with:
+  - `chain: base`
   - `token: USDC`
   - `receiver`
   - `amountUsd`
